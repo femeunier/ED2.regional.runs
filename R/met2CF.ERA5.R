@@ -47,10 +47,21 @@ met2CF.ERA5<- function(lat,
         beta <- (112 - (0.1 * t) + dewpoint) / (112 + (0.9 * t))
         relative.humidity <- beta ^ 8
         #specific humidity
-        specific_humidity <-
-          PEcAn.data.atmosphere::rh2qair(relative.humidity,
-                                         ens[, "t2m"] %>% as.numeric(),
-                                         ens[, "sp"] %>% as.numeric()) # Pressure in Pa
+
+        if ("sp" %in% colnames(ens)){
+
+          specific_humidity <-
+            PEcAn.data.atmosphere::rh2qair(relative.humidity,
+                                           ens[, "t2m"] %>% as.numeric(),
+                                           ifelse(ens[, "sp"]) %>%
+                                             as.numeric()) # Pressure in Pa
+        } else {
+
+          specific_humidity <-
+            PEcAn.data.atmosphere::rh2qair(relative.humidity,
+                                           ens[, "t2m"] %>% as.numeric()) # Pressure in Pa
+        }
+
       },
       error = function(e) {
         PEcAn.logger::logger.severe("Something went wrong during the unit conversion in met2cf ERA5.",
