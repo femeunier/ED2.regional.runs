@@ -53,7 +53,7 @@ met2CF.ERA5<- function(lat,
           specific_humidity <-
             PEcAn.data.atmosphere::rh2qair(relative.humidity,
                                            ens[, "t2m"] %>% as.numeric(),
-                                           ifelse(ens[, "sp"]) %>%
+                                           ens[, "sp"] %>%
                                              as.numeric()) # Pressure in Pa
         } else {
 
