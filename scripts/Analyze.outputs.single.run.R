@@ -5,7 +5,7 @@ library(dplyr)
 
 dir <- "/kyukon/scratch/gent/gvo000/gvo00074/felicien/CB/out/CB_X_9W_Y_9N/histo/"
 BaseNames <- c("history-eco-lu")
-years <- 1560:2660
+years <- 1560:2100
 months <- 1
 suffix <- "-01-000000-g01.h5"
 
@@ -30,9 +30,9 @@ for (BaseName in BaseNames){
                       data.frame(BaseName,
                                  year = cyear,
                                  month = cmonth,
-                                 pft = c(2,3,4),
-                                 LAI = (apply(LAI_SI,1,sum))[c(2,3,4)],
-                                 AGB = (apply(AGB_SI,1,sum))[c(2,3,4)]))
+                                 pft = c(1,2,3,4,16),
+                                 LAI = (apply(LAI_SI,1,sum))[c(1,2,3,4,16)],
+                                 AGB = (apply(AGB_SI,1,sum))[c(1,2,3,4,16)]))
 
       nc_close(nc)
 

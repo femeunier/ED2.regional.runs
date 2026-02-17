@@ -18,7 +18,8 @@ ts.AGB.CB <- bind_rows(raw,
                                    pft = 0,
                                    .groups = "keep"))
 
-ggplot(data = ts.AGB.CB) +
+ggplot(data = ts.AGB.CB %>%
+         filter(pft == 1)) +
   geom_line(aes(x = year + (month-1/2)/12,
                 y = LAI,
                 linetype = BaseName,
@@ -27,7 +28,8 @@ ggplot(data = ts.AGB.CB) +
   theme_bw()
 
 
-ggplot(data = ts.AGB.CB) +
+ggplot(data = ts.AGB.CB %>%
+         filter(pft == 16)) +
   geom_line(aes(x = year + (month-1/2)/12,
                 y = AGB,
                 linetype = BaseName,

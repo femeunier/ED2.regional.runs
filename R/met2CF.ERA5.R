@@ -155,10 +155,10 @@ met2CF.ERA5<- function(lat,
           #Each ensemble gets its own file.
           time_dim = ncdf4::ncdim_def(
             name = "time",
-            paste(units = "hours since", format(start_date, "%Y-%m-%dT%H:%M")),
+            paste(units = "days since", format(start_date, "%Y-%m-%dT%H:%M")),
             seq(0, (length(zoo::index(
               data.for.this.year.ens
-            )) * 3) - 1 , length.out = length(zoo::index(data.for.this.year.ens))),
+            )) * 3) - 1 , length.out = length(zoo::index(data.for.this.year.ens)))/24,
             create_dimvar = TRUE
           )
           lat_dim = ncdf4::ncdim_def("latitude", "degree_north", lat, create_dimvar = TRUE)
