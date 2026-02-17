@@ -152,15 +152,19 @@ met2CF.ERA5<- function(lat,
           data.for.this.year.ens <- data.for.this.year.ens[year %>% as.character]
 
 
-          #Each ensemble gets its own file.
-          time_dim = ncdf4::ncdim_def(
-            name = "time",
-            paste(units = "days since", format(start_date, "%Y-%m-%dT%H:%M")),
-            seq(0, (length(zoo::index(
-              data.for.this.year.ens
-            )) * 3) - 1 , length.out = length(zoo::index(data.for.this.year.ens)))/24,
+          #Each ensemble gets its own file
+
+          nt <- length(zoo::index(data.for.this.year.ens))
+          hours <- seq.int(0, by = 3L, length.out = nt)
+          time_vals_days <- as.double(hours) / 24
+
+          time_dim <- ncdf4::ncdim_def(
+            name  = "time",
+            units = paste("days since", format(start_date, "%Y-%m-%dT%H:%M:%S")),
+            vals  = time_vals_days,
             create_dimvar = TRUE
           )
+
           lat_dim = ncdf4::ncdim_def("latitude", "degree_north", lat, create_dimvar = TRUE)
           lon_dim = ncdf4::ncdim_def("longitude", "degree_east", long, create_dimvar = TRUE)
 

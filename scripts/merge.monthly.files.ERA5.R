@@ -13,7 +13,7 @@ rm(list = ls())
 # Tools required in PATH: unzip, ncrcat, ncks, ncrename (NCO)
 # ============================================================
 
-years  <- 1940:2024
+years  <- 1941
 # years <- 1940  # for testing
 
 in_dir  <- "/data/gent/vo/000/gvo00074/ED_common_data/met/CB/ERA5/test/"  # where monthly archives live
