@@ -179,8 +179,13 @@ for (isite in seq(1,nrow(coords))){
 
     point.data.fixed <- list()
     for (iens in seq(1,ensemblesN)){
+      # Remove duplicate
       point.data.fixed[[iens]] <-
         point.data[[iens]][!duplicated(index(point.data[[iens]])),]
+      # reorder
+      point.data.fixed[[iens]] <-
+        point.data.fixed[[iens]][,c("t2m","sp","d2m","tp",
+                                    "v10","u10","ssrd","strd")]
     }
 
     # Calling the met2CF inside extract bc in met process met2CF comes before extract !

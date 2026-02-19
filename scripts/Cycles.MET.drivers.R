@@ -1,16 +1,15 @@
 rm(list = ls())
 
-
 library(xts)
 library(tidyverse)
 library(lubridate)
 
-system2("rsync",
-        c("-avz",
-          "hpc:/vscmnt/gent_kyukon_data/_kyukon_data_gent/vo/000/gvo00074/ED_common_data/met/CB/extracted/ERA5_lat_1_lon_24.5_1/ERA5.RDS",
-          "./outputs/"))
+# system2("rsync",
+#         c("-avz",
+#           "hpc:/vscmnt/gent_kyukon_data/_kyukon_data_gent/vo/000/gvo00074/ED_common_data/met/CB/extracted/ERA5_lat_1_lon_24.5_1/ERA5.RDS",
+#           "./outputs/"))
 
-X <- readRDS("./outputs/ERA5.RDS")
+X <- readRDS("~/Downloads/TS_ERA5_lat_0_lon_24.RDS")[[1]]
 
 
 df <- fortify.zoo(X) |>        # keeps index
@@ -25,8 +24,7 @@ df <- fortify.zoo(X) |>        # keeps index
     hour = hour(time),
     doy  = yday(time),
     month = month(time, label = TRUE)
-  ) %>%
-  filter(year %in% 1960:1969)
+  )
 
 diel <- df |>
   group_by(variable, hour) |>

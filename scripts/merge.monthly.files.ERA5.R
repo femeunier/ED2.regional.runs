@@ -13,10 +13,9 @@ rm(list = ls())
 # Tools required in PATH: unzip, ncrcat, ncks, ncrename (NCO)
 # ============================================================
 
-years  <- 1941
-# years <- 1940  # for testing
+years  <- 1940:1949
 
-in_dir  <- "/data/gent/vo/000/gvo00074/ED_common_data/met/CB/ERA5/test/"  # where monthly archives live
+in_dir  <- "/data/gent/vo/000/gvo00074/ED_common_data/met/CB/ERA5/"  # where monthly archives live
 out_dir <- "/data/gent/vo/000/gvo00074/ED_common_data/met/CB/ERA5/"       # where yearly files are written
 
 # ---- NCO tools
