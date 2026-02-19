@@ -362,7 +362,7 @@ met2model.ED2 <- function(in.path, in.prefix, outfolder, start_date, end_date, l
       variables = metvar_table_vars
     ))
 
-    check_ed_metheader(ed_metheader)
+    #check_ed_metheader(ed_metheader)
     ED2.regional.runs::write_ed_metheader(ed_metheader, met_header_file,
                        header_line = shQuote("Made_by_PEcAn_met2model.ED2"))
   }  ### end loop over met files

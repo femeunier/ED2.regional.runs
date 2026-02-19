@@ -117,8 +117,8 @@ coords <- expand.grid(lon = lons,
                       lat = lats)
 
 # Years of drivers
-start_date = "1941-01-01"
-end_date = "1941-12-31"
+start_date = "1940-01-01"
+end_date = "1949-12-31"
 
 for (isite in seq(1,nrow(coords))){
 
@@ -233,14 +233,14 @@ for (isite in seq(1,nrow(coords))){
                         csite)
   newsite = csite
 
-  PEcAn.ED2::met2model.ED2(in.path = file.path(outfolder,paste0("ERA5_",csuffix,"_1")),
-                           in.prefix = "ERA5.1",
-                           outfolder = file.path(outfolder, paste0("ERA5_",csuffix,"_1"),"ED2"),
-                           start_date = start_date,
-                           end_date = end_date,
-                           lat = slat,
-                           lon = slon,
-                           overwrite = TRUE)
+  ED2.regional.runs::met2model.ED2(in.path = file.path(outfolder,paste0("ERA5_",csuffix,"_1")),
+                                   in.prefix = "ERA5.1",
+                                   outfolder = file.path(outfolder, paste0("ERA5_",csuffix,"_1"),"ED2"),
+                                   start_date = start_date,
+                                   end_date = end_date,
+                                   lat = slat,
+                                   lon = slon,
+                                   overwrite = TRUE)
 
 }
 
