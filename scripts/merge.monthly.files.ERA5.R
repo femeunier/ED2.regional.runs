@@ -13,7 +13,7 @@ rm(list = ls())
 # Tools required in PATH: unzip, ncrcat, ncks, ncrename (NCO)
 # ============================================================
 
-years  <- 1940:1949
+years  <- 1950:2024
 
 in_dir  <- "/data/gent/vo/000/gvo00074/ED_common_data/met/CB/ERA5/"  # where monthly archives live
 out_dir <- "/data/gent/vo/000/gvo00074/ED_common_data/met/CB/ERA5/"       # where yearly files are written
@@ -95,8 +95,20 @@ acc_vars <- c("tp", "ssrd", "strd")
 for (yy in years) {
 
   out_file <- file.path(out_dir, sprintf("ERA5_CB_%d.nc", yy))
+  zip_files <- file.path(in_dir, sprintf("ERA5_CB_%d_%02d.nc", yy, 1:12))
+
   if (file.exists(out_file)) {
     message(sprintf("[skip] %d exists -> %s", yy, out_file))
+
+    existing.zip_files <- zip_files[file.exists(zip_files)]
+
+    if (length(existing.zip_files) > 0){
+
+      for (ifile in seq(1,length(existing.zip_files))){
+        system2("rm",existing.zip_files[ifile])
+      }
+    }
+
     next
   }
 
@@ -220,6 +232,15 @@ for (yy in years) {
 
   message(sprintf("[done] %d -> %s", yy, out_file))
   unlink(tmp_year, recursive = TRUE, force = TRUE)
+
+  # 5) Delete monthly files
+  existing.zip_files <- zip_files[file.exists(zip_files)]
+
+  if (length(existing.zip_files) > 0){
+    for (ifile in seq(1,length(existing.zip_files))){
+      system2("rm",existing.zip_files[ifile])
+    }
+  }
 }
 
 # scp /Users/felicien/Documents/projects/ED2.regional.runs/scripts/merge.monthly.files.ERA5.R hpc:/data/gent/vo/000/gvo00074/felicien/R

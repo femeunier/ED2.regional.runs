@@ -124,6 +124,7 @@ met2model.ED2 <- function(in.path, in.prefix, outfolder, start_date, end_date, l
   ## loop over files
   for (year in year_seq) {
 
+    print(year)
     ## open netcdf
     ncfile <- file.path(in.path, paste(in.prefix, year, "nc", sep = "."))
     nc <- ncdf4::nc_open(ncfile)
