@@ -80,7 +80,8 @@ met2CF.ERA5<- function(lat,
             "northward_wind",
             "surface_downwelling_shortwave_flux_in_air",
             "surface_downwelling_longwave_flux_in_air",
-            "specific_humidity"
+            "specific_humidity",
+            "mole_fraction_of_carbon_dioxide_in_air"
           )
         )
 

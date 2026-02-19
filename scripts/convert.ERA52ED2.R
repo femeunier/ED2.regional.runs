@@ -105,7 +105,7 @@ dataCO2.n <- dataC02 %>% mutate(years = str_sub(V1,7,10),
 
 ################################################################################
 # Extract
-in.path = "/data/gent/vo/000/gvo00074/ED_common_data/met/CB/ERA5/test/"
+in.path = "/data/gent/vo/000/gvo00074/ED_common_data/met/CB/ERA5/"
 
 in.prefix = "ERA5_CB_"
 vars = NULL
@@ -186,6 +186,8 @@ for (isite in seq(1,nrow(coords))){
       point.data.fixed[[iens]] <-
         point.data.fixed[[iens]][,c("t2m","sp","d2m","tp",
                                     "v10","u10","ssrd","strd")]
+      point.data.fixed[[iens]]$co2 <- 280
+
     }
 
     # Calling the met2CF inside extract bc in met process met2CF comes before extract !
