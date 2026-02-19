@@ -80,8 +80,8 @@ met2CF.ERA5<- function(lat,
             "northward_wind",
             "surface_downwelling_shortwave_flux_in_air",
             "surface_downwelling_longwave_flux_in_air",
-            "specific_humidity",
-            "mole_fraction_of_carbon_dioxide_in_air"
+            "mole_fraction_of_carbon_dioxide_in_air",
+            "specific_humidity"
           )
         )
 
@@ -90,7 +90,7 @@ met2CF.ERA5<- function(lat,
 
   #These are the cf standard names
   cf_var_names = colnames(out.new[[1]])
-  cf_var_units = c("K", "Pa", "kg m-2 s-1", "m s-1", "m s-1", "W m-2", "W m-2", "1")  #Negative numbers indicate negative exponents
+  cf_var_units = c("K", "Pa", "kg m-2 s-1", "m s-1", "m s-1", "W m-2", "W m-2","ppm","1")  #Negative numbers indicate negative exponents
 
 
   results_list <-  ensemblesN %>%
