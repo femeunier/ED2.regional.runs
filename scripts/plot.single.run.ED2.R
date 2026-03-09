@@ -18,8 +18,7 @@ ts.AGB.CB <- bind_rows(raw,
                                    pft = 0,
                                    .groups = "keep"))
 
-ggplot(data = ts.AGB.CB %>%
-         filter(pft == 1)) +
+ggplot(data = ts.AGB.CB) +
   geom_line(aes(x = year + (month-1/2)/12,
                 y = LAI,
                 linetype = BaseName,
@@ -29,10 +28,10 @@ ggplot(data = ts.AGB.CB %>%
 
 
 ggplot(data = ts.AGB.CB %>%
-         filter(pft == 16)) +
-  geom_line(aes(x = year + (month-1/2)/12,
+         filter(pft == 0)) +
+  geom_point(aes(x = year + (month-1/2)/12,
                 y = AGB,
                 linetype = BaseName,
                 color = as.factor(pft))) +
-  # scale_x_continuous(limits = c(1560,1590)) +
+  scale_x_continuous(limits = c(2020,2025)) +
   theme_bw()

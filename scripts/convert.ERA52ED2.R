@@ -7,8 +7,25 @@ library(PEcAn.ED2)
 library(udunits2)
 library(ED2.regional.runs)
 library(xts)
+library(lubridate)
 
-Sys.setenv(HDF5_USE_FILE_LOCKING = "FALSE")
+################################################################################
+# Extract
+in.path = "/data/gent/vo/000/gvo00074/ED_common_data/met/CB/ERA5/"
+
+in.prefix = "ERA5_CB_"
+vars = NULL
+overwrite = TRUE
+
+lats <- seq(2.5,7.5,1)
+lons <- seq(20,25,1)
+coords <- expand.grid(lon = lons,
+                      lat = lats)
+
+# Years of drivers
+start_date = "1941-01-01"
+end_date = "2024-12-31"
+
 
 ################################################################################
 method = "ncss"
@@ -19,6 +36,10 @@ overwrite = TRUE
 
 ################################################################################
 # Functions
+
+is_leap <- function(year) {
+  (year %% 4 == 0 & year %% 100 != 0) | (year %% 400 == 0)
+}
 
 merge_periods <- function(spinup, historical1, historical2) {
   x <- rbind(spinup, historical1, historical2)
@@ -41,125 +62,9 @@ add_yearly_co2_xts <- function(x, co2_by_year, tz = "UTC") {
     stop("Missing CO2 values for years: ", paste(missing_years, collapse = ", "))
   }
 
-  x$co2 <- co2_ppm / 1e6
+  x$co2 <- co2_ppm
   x
 }
-
-
-is_leap <- function(y) (y %% 4 == 0 & y %% 100 != 0) | (y %% 400 == 0)
-
-# shift an xts "year slice" into a target year (keeps month/day/time)
-shift_to_year <- function(x_year, target_year, tz = "UTC") {
-  idx <- index(x_year)
-  mmdd_hms <- format(idx, "%m-%d %H:%M:%S", tz = tz)
-
-  new_str <- sprintf("%04d-%s", as.integer(target_year), mmdd_hms)
-  new_idx <- as.POSIXct(new_str, format = "%Y-%m-%d %H:%M:%S", tz = tz)
-
-  # drop invalid (e.g. Feb-29 in non-leap years)
-  keep <- !is.na(new_idx)
-  x2 <- x_year[keep, ]
-  new_idx <- new_idx[keep]
-
-  # enforce sorted & unique index
-  o <- order(new_idx)
-  x2 <- x2[o, ]
-  new_idx <- new_idx[o]
-
-  # if duplicates remain, keep first occurrence
-  dup <- duplicated(new_idx)
-  if (any(dup)) {
-    x2 <- x2[!dup, ]
-    new_idx <- new_idx[!dup]
-  }
-
-  index(x2) <- new_idx
-  x2
-}
-
-shift_years_block <- function(x, from_years = 1941:1950, to_years = 1690:1699, tz="UTC") {
-  stopifnot(length(from_years) == length(to_years))
-
-  # helper: shift one year slice to a target year (drops Feb-29 if invalid)
-  shift_to_year <- function(x_year, target_year) {
-    idx <- index(x_year)
-    mmdd_hms <- format(idx, "%m-%d %H:%M:%S", tz = tz)
-    new_str <- sprintf("%04d-%s", as.integer(target_year), mmdd_hms)
-    new_idx <- as.POSIXct(new_str, format = "%Y-%m-%d %H:%M:%S", tz = tz)
-
-    ii <- which(!is.na(new_idx))
-    if (length(ii) == 0) return(x_year[0, , drop = FALSE])
-
-    x2 <- x_year[ii, , drop = FALSE]
-    new_idx <- new_idx[ii]
-
-    o <- order(new_idx)
-    x2 <- x2[o, , drop = FALSE]
-    new_idx <- new_idx[o]
-
-    dup <- duplicated(new_idx)
-    if (any(dup)) {
-      x2 <- x2[!dup, , drop = FALSE]
-      new_idx <- new_idx[!dup]
-    }
-
-    index(x2) <- new_idx
-    x2
-  }
-
-  pieces <- vector("list", length(from_years))
-  for (k in seq_along(from_years)) {
-    fy <- from_years[k]
-    ty <- to_years[k]
-
-    x_year <- x[paste0(fy, "/")]
-    if (nrow(x_year) == 0) stop("No data found for template year: ", fy)
-
-    pieces[[k]] <- shift_to_year(x_year, ty)
-  }
-
-  out <- do.call(rbind, pieces)
-
-  # final safety: ensure sorted/unique index
-  out <- out[order(index(out)), ]
-  out <- out[!duplicated(index(out)), ]
-
-  out
-}
-
-
-make_historical1 <- function(raw, co2_by_year,
-                             start_year = 1700, end_year = 1939,
-                             template_years = 1941:1950,
-                             tz = "UTC") {
-
-  # template block (10 years)
-  template <- raw[paste0(min(template_years), "/", max(template_years))]
-
-  out_list <- vector("list", length = end_year - start_year + 1)
-  k <- 1
-
-  for (y in start_year:end_year) {
-    # pick which template year to use (cycle over 10 years)
-    y_tmpl <- template_years[( (y - start_year) %% length(template_years) ) + 1]
-
-    x_year <- template[paste0(y_tmpl, "/")]
-    x_year <- shift_to_year(x_year, y, tz = tz)
-
-    # assign yearly CO2 (ppm -> mol/mol)
-    co2_ppm <- unname(co2_by_year[as.character(y)])
-    if (is.na(co2_ppm)) stop("Missing CO2 for year: ", y)
-
-    x_year$co2 <- co2_ppm / 1e6
-
-    out_list[[k]] <- x_year
-    k <- k + 1
-  }
-
-  do.call(rbind, out_list)
-}
-
-
 
 .pick_first <- function(nm, candidates) {
   hit <- intersect(nm, candidates)
@@ -242,141 +147,212 @@ dataC02 <- read.table(fileCO2,stringsAsFactors = FALSE)
 
 dataCO2.n <- dataC02 %>%
   mutate(year = as.numeric(V1),
-         CO2 = as.numeric(V2)) %>%
-  dplyr::select(year,CO2)
+         co2 = as.numeric(V2)/1e6) %>%
+  dplyr::select(year,co2)
 
-co2_by_year <- setNames(dataCO2.n$CO2, dataCO2.n$year)
-
-
-################################################################################
-# Extract
-in.path = "/data/gent/vo/000/gvo00074/ED_common_data/met/CB/ERA5/"
-
-in.prefix = "ERA5_CB_"
-vars = NULL
-overwrite = TRUE
-
-lats <- seq(0,0,0.5)
-lons <- seq(24,24,0.5)
-coords <- expand.grid(lon = lons,
-                      lat = lats)
-
-# Years of drivers
-start_date = "1941-01-01"
-end_date = "2024-12-31"
-
-for (isite in seq(1,nrow(coords))){
-
-  print(isite/nrow(coords))
-
-  # Your site coordinates
-  slon <- coords[["lon"]][isite]
-  slat <- coords[["lat"]][isite]
-
-  csuffix <- paste0("lat_",
-               slat,
-               "_lon_",
-               slon)
-  csite <- paste0("ERA5_",
-                  csuffix)
+co2_by_year <- setNames(dataCO2.n$co2, dataCO2.n$year)
 
 
-  outfolder = file.path("/data/gent/vo/000/gvo00074/ED_common_data/met/CB/ERA5_ED2/",
-                        csite)
-  newsite = csite
+# for (isite in seq(1,nrow(coords))){
+#
+#   print(isite/nrow(coords))
+#
+#   # Your site coordinates
+#   slon <- coords[["lon"]][isite]
+#   slat <- coords[["lat"]][isite]
+#
+#   csuffix <- paste0("lat_",
+#                slat,
+#                "_lon_",
+#                slon)
+#   csite <- paste0("ERA5_",
+#                   csuffix)
+#
+#
+#   outfolder = file.path("/data/gent/vo/000/gvo00074/ED_common_data/met/CB/ERA5_ED2/",
+#                         csite)
+#   newsite = csite
+#
+#   years <- seq(lubridate::year(start_date),lubridate::year(end_date),1)
+#   ensemblesN <- seq(1, 1)
+#
+#   tryCatch({
+#     #for each ensemble
+#     one.year.out <- years %>%
+#       purrr::map(function(year) {
+#
+#         # for each year
+#         ncfile <- file.path(in.path, paste0(in.prefix, year, ".nc"))
+#
+#         point.data <- ensemblesN %>%
+#           purrr::map(function(ens) {
+#
+#             PEcAn.logger::logger.info(paste0("Reading point data from: ", ncfile))
+#             if (!file.exists(ncfile)) stop("NetCDF file not found: ", ncfile)
+#
+#             XTS1 <- get_point_xts_ncdf4(ncfile, slon = slon, slat = slat, ens = ens)
+#             XTS1
+#           }) %>%
+#           setNames(paste0("ERA_ensemble_", ensemblesN))
+#
+#         #Merge mean and the speard
+#         return(point.data)
+#
+#       }) %>%
+#       setNames(years)
+#
+#     # The order of one.year.out is year and then Ens - Mainly because of the spead  / I wanted to touch each file just once.
+#     # This now changes the order to ens - year
+#     point.data <- ensemblesN %>%
+#       purrr::map(function(Ensn) {
+#         one.year.out %>%
+#           purrr::map( ~ .x [[Ensn]]) %>%
+#           do.call("rbind.xts", .)
+#       })
+#
+#     # We arrange everything for spinup/historical period
+#
+#     forcing <- spinup <- historical1 <- historical2 <-
+#       list()
+#     for (iens in seq(1,ensemblesN)){
+#
+#       raw.data.ensemble <- point.data[[iens]][!duplicated(index(point.data[[iens]])),c("t2m","sp","d2m","tp","v10","u10","ssrd","strd")]
+#
+#       raw.data.ensemble.init <- raw.data.ensemble["1941/1950"]
+#
+#       raw.data.ensemble.spinup <- raw.data.ensemble.init
+#       raw.data.ensemble.spinup$co2 <- 276.59/1e6
+#
+#       raw.df <- as.data.frame(raw.data.ensemble.spinup) %>%
+#         mutate(date = (index(raw.data.ensemble.spinup))) %>%
+#         mutate(year = year(date),
+#                month = month(date),
+#                day = day(date),
+#                hour = hour(date))
+#
+#       cdf <- raw.df %>%
+#         filter(!(month == 2 & day == 29))
+#
+#       cdf.spinup <- cdf %>%
+#         mutate(year = year - 251)
+#
+#       years <- unique(cdf.spinup$year)
+#       years.leap <- years[is_leap(years)]
+#
+#       for (year.leap in years.leap){
+#         cdf.spinup <- bind_rows(cdf.spinup,
+#                                 cdf.spinup %>%
+#                                   filter(year == year.leap,
+#                                          month == 2,
+#                                          day == 28) %>%
+#                                   mutate(day = 29))
+#
+#       }
+#
+#       cdf.spinup <- cdf.spinup %>%
+#         arrange(year,month,day,hour) %>%
+#         mutate(date = paste0(year,"/",sprintf("%02d",month),"/",
+#                            sprintf("%02d",day)," ",
+#                            sprintf("%02d",hour),":00:00"))
+#
+#       raw.data.ensemble.spinup_mod <- as.xts(cdf.spinup %>%
+#                                                dplyr::select(-c("date","year","month","day","hour")))
+#
+#       index(raw.data.ensemble.spinup_mod) <-
+#         as.POSIXct(cdf.spinup$date, format = "%Y/%m/%d %H:%M:%S", tz = "UTC")
+#       spinup[[iens]] <- raw.data.ensemble.spinup_mod
+#
+#       all_deltas <- seq(241,11,-10)
+#       all.df <- data.frame()
+#       for (delta in all_deltas){
+#         all.df <- bind_rows(all.df,
+#                             cdf %>%
+#                               mutate(year = year - delta))
+#       }
+#
+#       all.df <- bind_rows(all.df,
+#                           cdf %>%
+#                             filter(year == 1941) %>%
+#                             mutate(year = 1940)) %>%
+#         dplyr::select(-co2) %>%
+#         left_join(dataCO2.n,
+#                   by = "year")
+#
+#       years <- unique(all.df$year)
+#       years.leap <- years[is_leap(years)]
+#
+#       for (year.leap in years.leap){
+#         all.df <- bind_rows(all.df,
+#                             all.df %>%
+#                               filter(year == year.leap,
+#                                      month == 2,
+#                                      day == 28) %>%
+#                               mutate(day = 29))
+#
+#       }
+#
+#       all.df <- all.df %>%
+#         arrange(year,month,day,hour) %>%
+#         mutate(date = paste0(year,"/",sprintf("%02d",month),"/",
+#                              sprintf("%02d",day)," ",
+#                              sprintf("%02d",hour),":00:00"))
+#
+#       idx <- as.POSIXct(all.df$date, format = "%Y/%m/%d %H:%M:%S", tz = "UTC")
+#
+#       raw.data.ensemble.historical <- xts::xts(
+#         all.df %>% dplyr::select(-c("date","year","month","day","hour")),
+#         order.by = idx,
+#         tzone = "UTC"
+#       )
+#       historical1[[iens]] <- raw.data.ensemble.historical
+#
+#       historical2[[iens]] <- raw.data.ensemble["1941/2024"]
+#
+#       historical2[[iens]] <- add_yearly_co2_xts(historical2[[iens]],
+#                                                 co2_by_year, tz = "UTC")
+#
+#       forcing[[iens]] <- merge_periods(spinup[[iens]],
+#                                        historical1[[iens]],
+#                                        historical2[[iens]])
+#
+#     }
+#
+#     # Calling the met2CF inside extract bc in met process met2CF comes before extract !
+#     out <- ED2.regional.runs::met2CF.ERA5(
+#       slat,
+#       slon,
+#       start_date = "1690-01-01",
+#       end_date = "2024-12-31",
+#       sitename=csuffix,
+#       outfolder,
+#       forcing,
+#       overwrite = TRUE,
+#       verbose = TRUE
+#     )
+#
+#
+#   }, error = function(e) {
+#     PEcAn.logger::logger.severe(paste0(conditionMessage(e)))
+#   })
+#
+# #   saveRDS(spinup,
+# #           file.path("./data/","spinup.RDS"))
+# #
+# #   saveRDS(historical1,
+# #           file.path("./data/historical1.RDS"))
+# #
+# #   saveRDS(historical2,
+# #           file.path("./data/historical2.RDS"))
+#
+#   saveRDS(forcing,
+#           file.path("./data",paste0("TS_",csite,".RDS")))
+#
+#   raster::removeTmpFiles(h = 0)
+#   closeAllConnections()
+#   gc(FALSE); gc(FALSE)
+# }
 
-  years <- seq(lubridate::year(start_date),lubridate::year(end_date),1)
-  ensemblesN <- seq(1, 1)
-
-  tryCatch({
-    #for each ensemble
-    one.year.out <- years %>%
-      purrr::map(function(year) {
-
-        # for each year
-        ncfile <- file.path(in.path, paste0(in.prefix, year, ".nc"))
-
-        point.data <- ensemblesN %>%
-          purrr::map(function(ens) {
-
-            PEcAn.logger::logger.info(paste0("Reading point data from: ", ncfile))
-            if (!file.exists(ncfile)) stop("NetCDF file not found: ", ncfile)
-
-            XTS1 <- get_point_xts_ncdf4(ncfile, slon = slon, slat = slat, ens = ens)
-            XTS1
-          }) %>%
-          setNames(paste0("ERA_ensemble_", ensemblesN))
-
-        #Merge mean and the speard
-        return(point.data)
-
-      }) %>%
-      setNames(years)
-
-    # The order of one.year.out is year and then Ens - Mainly because of the spead  / I wanted to touch each file just once.
-    # This now changes the order to ens - year
-    point.data <- ensemblesN %>%
-      purrr::map(function(Ensn) {
-        one.year.out %>%
-          purrr::map( ~ .x [[Ensn]]) %>%
-          do.call("rbind.xts", .)
-      })
-
-    # We arrange everything for spinup/historical period
-
-    forcing <- spinup <- historical1 <- historical2 <-
-      list()
-    for (iens in seq(1,ensemblesN)){
-
-      raw.data.ensemble <- point.data[[iens]][!duplicated(index(point.data[[iens]])),c("t2m","sp","d2m","tp","v10","u10","ssrd","strd")]
-
-      spinup[[iens]] <- shift_years_block(raw.data.ensemble[index(raw.data.ensemble) <= as.POSIXct("1950-01-01", tz = "UTC"),],
-                                          from_years = 1941:1950, to_years = 1690:1699, tz="UTC")
-
-      # constant CO2 for spinup (mol/mol)
-      spinup[[iens]]$co2 <- 276.59/1e6
-
-      historical1[[iens]] <- make_historical1(raw.data.ensemble, co2_by_year,
-                                              start_year = 1700, end_year = 1940,
-                                              template_years = 1941:1950,
-                                              tz = "UTC")
-
-      historical2[[iens]] <- raw.data.ensemble["1941/2024"]
-
-      historical2[[iens]] <- add_yearly_co2_xts(historical2[[iens]], co2_by_year, tz = "UTC")
-
-      forcing[[iens]] <- merge_periods(spinup[[iens]], historical1[[iens]], historical2[[iens]])
-
-    }
-
-    # Calling the met2CF inside extract bc in met process met2CF comes before extract !
-    out <- ED2.regional.runs::met2CF.ERA5(
-      slat,
-      slon,
-      start_date = "1690-01-01",
-      end_date = "2024-12-31",
-      sitename=csuffix,
-      outfolder,
-      forcing,
-      overwrite = TRUE,
-      verbose = TRUE
-    )
-
-
-  }, error = function(e) {
-    PEcAn.logger::logger.severe(paste0(conditionMessage(e)))
-  })
-
-
-  saveRDS(forcing,
-          file.path("./data",paste0("TS_",csite,".RDS")))
-
-  raster::removeTmpFiles(h = 0)
-  closeAllConnections()
-  gc(FALSE); gc(FALSE)
-}
-
-for (isite in seq(1,nrow(coords))){
+for (isite in seq(nrow(coords),1,-1)){
 
   print(isite/nrow(coords))
 
@@ -402,7 +378,7 @@ for (isite in seq(1,nrow(coords))){
                                    end_date = "2024-12-31",
                                    lat = slat,
                                    lon = slon,
-                                   overwrite = TRUE)
+                                   overwrite = FALSE)
 
 }
 

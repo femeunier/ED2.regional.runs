@@ -26,10 +26,10 @@ rcp <- c("lu")
 #------------------------------------------------------------------------------------------#
 # 2. Define the initial and final coordinates for the output blocks.                       #
 #------------------------------------------------------------------------------------------#
-lona    = 25 # Westernmost edge (first block longitude will be lona + dblock/2)
-lonz    = 26 # Easternmost edge (the closest that creates regular blocks will be used)
+lona    = 20 # Westernmost edge (first block longitude will be lona + dblock/2)
+lonz    = 25 # Easternmost edge (the closest that creates regular blocks will be used)
 lata    =  0.0 # Southernmost edge (first block latitude will be lata + dblock/2)
-latz    =  1.0 # Northernmost edge (the closest that creates regular blocks will be used)
+latz    =  5.0 # Northernmost edge (the closest that creates regular blocks will be used)
 dblock  =  0.50 # Size of block (both longitude and latitude)
 #------------------------------------------------------------------------------------------#
 

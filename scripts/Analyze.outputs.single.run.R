@@ -4,8 +4,8 @@ library(ncdf4)
 library(dplyr)
 
 dir <- "/kyukon/scratch/gent/gvo000/gvo00074/felicien/CB/out/CB_X_9W_Y_9N/histo/"
-BaseNames <- c("history-eco-lu")
-years <- 1560:2100
+BaseNames <- c("history-eco")
+years <- 1400:2024
 months <- 1
 suffix <- "-01-000000-g01.h5"
 

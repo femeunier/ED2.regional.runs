@@ -3,17 +3,17 @@ rm(list = ls())
 library(xts)
 library(tidyverse)
 library(lubridate)
+library(ggplot2)
 
-# system2("rsync",
-#         c("-avz",
-#           "hpc:/vscmnt/gent_kyukon_data/_kyukon_data_gent/vo/000/gvo00074/ED_common_data/met/CB/extracted/ERA5_lat_1_lon_24.5_1/ERA5.RDS",
-#           "./outputs/"))
+system2("rsync",
+        c("-avz",
+          "hpc:/data/gent/vo/000/gvo00074/felicien/R/data/TS_ERA5_lat_0_lon_24.RDS",
+          "./outputs/"))
 
-X <- readRDS("~/Downloads/TS_ERA5_lat_0_lon_24.RDS")[[1]]
-
+X <- readRDS("./outputs/TS_ERA5_lat_0_lon_24.RDS")[[1]]
 
 df <- fortify.zoo(X) |>        # keeps index
-  rename(time = Index) |>     # rename index
+  dplyr::rename(time = Index) |>     # rename index
   pivot_longer(
     -time,
     names_to = "variable",
@@ -22,13 +22,24 @@ df <- fortify.zoo(X) |>        # keeps index
   mutate(
     year = year(time),
     hour = hour(time),
+    day = day(time),
     doy  = yday(time),
+    month.num = month(time),
     month = month(time, label = TRUE)
   )
+
+
+df %>%
+  filter(year == 1692,
+         month.num == 2) %>%
+  pull(day) %>%
+  unique()
 
 diel <- df |>
   group_by(variable, hour) |>
   summarise(value = mean(value, na.rm = TRUE), .groups = "drop")
+
+diel %>% dplyr::filter(variable == "ssrd")
 
 ggplot(diel, aes(hour, value)) +
   geom_line() +
