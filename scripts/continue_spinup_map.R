@@ -12,12 +12,13 @@ library(purrr)
 ref_dir <- "/kyukon/scratch/gent/vo/000/gvo00074/felicien/CB/run/grid"
 ed2in <- read_ed2in(
   file.path(ref_dir,
-            "ED2IN_historical"))
+            "ED2IN_spinup"))
 
 # No -T- Files
 ed2in$ITOUTPUT = 0
 ed2in$IYEARZ   = 1400
-ed2in$IYEARZ   = 1800
+ed2in$IYEARZ   = 1700
+rstart.year    = 1600
 
 rundir <- "/kyukon/scratch/gent/vo/000/gvo00074/felicien/CB/run/grid"
 outdir <- "/kyukon/scratch/gent/gvo000/gvo00074/felicien/CB/out/"
@@ -48,10 +49,11 @@ for (icoord in seq(1,nrow(coords))){
   # ED2IN
   ed2in_scenar <- ed2in
 
+  ed2in_scenar$RUNTYPE  = 'HISTORY'
   ed2in_scenar$FFILOUT = file.path(out_ref,"analy","analysis")
   ed2in_scenar$SFILOUT = file.path(out_ref,"histo","history")
   ed2in_scenar$SFILIN   = file.path(out_ref,"histo","history")
-  ed2in_scenar$IYEARH   = 1700
+  ed2in_scenar$IYEARH   = rstart.year
 
   # Met driver
   ed2in_scenar$ED_MET_DRIVER_DB =
@@ -59,27 +61,27 @@ for (icoord in seq(1,nrow(coords))){
            clat,'_lon_',clon,'/ERA5_lat_',clat,'_lon_',clon,'_1/ED2/ED_MET_DRIVER_HEADER')
 
   write_ed2in(ed2in_scenar,
-              filename = file.path(run_ref,"ED2IN_historical"))
+              filename = file.path(run_ref,"ED2IN_spinup_TBC"))
 
   # job.sh
 
   write_job_noR(file = file.path(run_ref,
-                                 "job_CB_historical.sh"),
-                nodes = 1,ppn = 18,mem = 16,walltime = 72,
+                                 "job_CB_spinup_TBC.sh"),
+                nodes = 1,ppn = 18,mem = 16,walltime = 24,
                 prerun = "ml purge ; ml HDF5/1.14.3-iimpi-2023b ; ml imkl-FFTW/2023.2.0-iimpi-2023b; ulimit -s unlimited",
                 CD = run_ref,
                 ed_exec = "/kyukon/scratch/gent/vo/000/gvo00074/felicien/ED2.2/ED2/ED/build/ed_2.2-opt-master-bae4504d",
-                ED2IN = "ED2IN_historical")
+                ED2IN = "ED2IN_spinup_TBC")
 
   list_dir[[run_name]] = run_ref
 
 }
 
-dumb <- write_bash_submission(file = file.path(rundir,"all_jobs_historical.sh"),
+dumb <- write_bash_submission(file = file.path(rundir,"all_jobs_spinup.sh"),
                               list_files = list_dir,
-                              job_name = "job_CB_historical.sh")
+                              job_name = "job_CB_spinup_TBC.sh")
 
 
-# scp /Users/felicien/Documents/projects/ED2.regional.runs/scripts/generate_historical_map.R hpc:/data/gent/vo/000/gvo00074/felicien/R
+# scp /Users/felicien/Documents/projects/ED2.regional.runs/scripts/continue_spinup_map.R hpc:/data/gent/vo/000/gvo00074/felicien/R
 
 

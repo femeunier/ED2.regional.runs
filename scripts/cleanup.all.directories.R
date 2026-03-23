@@ -14,8 +14,8 @@ ref_dir <- "/kyukon/scratch/gent/vo/000/gvo00074/felicien/CB/run/grid"
 rundir <- "/kyukon/scratch/gent/vo/000/gvo00074/felicien/CB/run/grid"
 outdir <- "/kyukon/scratch/gent/gvo000/gvo00074/felicien/CB/out/"
 
-lats <- seq(2.5,3.5,1)
-lons <- seq(20,21,1)
+lats <- seq(2.5,7.5,1)
+lons <- seq(20,25,1)
 coords <- expand.grid(lon = lons,
                       lat = lats)
 
@@ -26,6 +26,8 @@ for (icoord in seq(1,nrow(coords))){
   # Directories
   run_name <- paste0("CB_X_",abs(clon),ifelse(sign(clon) > 0,"E","W"),
                      "_Y_",abs(clat),ifelse(sign(clat) > 0,"N","S"))
+
+  print(paste0("Cleaning ",run_name))
 
   run_ref <- file.path(rundir,run_name)
   out_ref <- file.path(outdir,run_name)
@@ -48,6 +50,8 @@ for (icoord in seq(1,nrow(coords))){
 
 # scp /Users/felicien/Documents/projects/ED2.regional.runs/scripts/cleanup.all.directories.R hpc:/data/gent/vo/000/gvo00074/felicien/R
 
+
+# Before cleaning
 # Initial directories
 # inputs/climate
 # 629M	./ED2
@@ -56,5 +60,15 @@ for (icoord in seq(1,nrow(coords))){
 # 9.0G	./histo
 # 68G	./analy
 # 77G	.
+
+# After cleaning
+# outputs
+# 772M	./histo
+# 1.4G	./analy
+# 2.1G	.
+
+# 100 years for 36 gridcells of simulation outputs: 500gb, after cleanup is 27gb
+
+
 
 

@@ -17,13 +17,13 @@ ed2in <- read_ed2in(
 # No -T- Files
 ed2in$ITOUTPUT = 0
 ed2in$IYEARZ   = 1400
-ed2in$IYEARZ   = 1700
+ed2in$IYEARZ   = 1500
 
 rundir <- "/kyukon/scratch/gent/vo/000/gvo00074/felicien/CB/run/grid"
 outdir <- "/kyukon/scratch/gent/gvo000/gvo00074/felicien/CB/out/"
 
-lats <- seq(2.5,3.5,1)
-lons <- seq(20,21,1)
+lats <- seq(2.5,7.5,1)
+lons <- seq(20,25,1)
 coords <- expand.grid(lon = lons,
                       lat = lats)
 
@@ -47,6 +47,7 @@ for (icoord in seq(1,nrow(coords))){
 
   # ED2IN
   ed2in_scenar <- ed2in
+
   ed2in_scenar$FFILOUT = file.path(out_ref,"analy","analysis")
   ed2in_scenar$SFILOUT = file.path(out_ref,"histo","history")
 
@@ -62,7 +63,7 @@ for (icoord in seq(1,nrow(coords))){
 
   write_job_noR(file = file.path(run_ref,
                                  "job_CB_spinup.sh"),
-                    nodes = 1,ppn = 18,mem = 16,walltime = 72,
+                    nodes = 1,ppn = 18,mem = 16,walltime = 24,
                     prerun = "ml purge ; ml HDF5/1.14.3-iimpi-2023b ; ml imkl-FFTW/2023.2.0-iimpi-2023b; ulimit -s unlimited",
                     CD = run_ref,
                     ed_exec = "/kyukon/scratch/gent/vo/000/gvo00074/felicien/ED2.2/ED2/ED/build/ed_2.2-opt-master-bae4504d",
