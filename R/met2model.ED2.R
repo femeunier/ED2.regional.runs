@@ -28,7 +28,8 @@
 #' @param leap_year Enforce Leap-years? If set to TRUE, will require leap years to have 366 days. If set to false, will require all years to have 365 days. Default = TRUE.
 #' @param ... currently unused
 met2model.ED2 <- function(in.path, in.prefix, outfolder, start_date, end_date, lst = 0, lat = NA,
-                          lon = NA, overwrite = FALSE, verbose = FALSE, leap_year = TRUE, ...) {
+                          lon = NA, overwrite = FALSE, verbose = FALSE, leap_year = TRUE,
+                          split.diffuse = TRUE,...) {
 
   overwrite <- as.logical(overwrite)
 
@@ -258,6 +259,8 @@ met2model.ED2 <- function(in.path, in.prefix, outfolder, start_date, end_date, l
     rpot <- rpot[seq_along(tdays)]
 
     SW[rpot < SW] <- rpot[rpot < SW]  ## ensure radiation < max
+    # SW <- pmin(SW,1200)
+
     ### this causes trouble at twilight bc of missmatch btw bin avergage and bin midpoint
     frac <- SW/rpot
     frac[frac > 0.9] <- 0.9  ## ensure some diffuse
@@ -268,10 +271,23 @@ met2model.ED2 <- function(in.path, in.prefix, outfolder, start_date, end_date, l
 
     ### convert to ED2.1 hdf met variables
     n      <- length(Tair)
-    nbdsfA <- (SW - SWd) * 0.57  # near IR beam downward solar radiation [W/m2]
-    nddsfA <- SWd * 0.48  # near IR diffuse downward solar radiation [W/m2]
-    vbdsfA <- (SW - SWd) * 0.43  # visible beam downward solar radiation [W/m2]
-    vddsfA <- SWd * 0.52  # visible diffuse downward solar radiation [W/m2]
+
+    if (split.diffuse){
+      nbdsfA <- (SW - SWd) * 0.57  # near IR beam downward solar radiation [W/m2]
+      nddsfA <- SWd * 0.48  # near IR diffuse downward solar radiation [W/m2]
+      vbdsfA <- (SW - SWd) * 0.43  # visible beam downward solar radiation [W/m2]
+      vddsfA <- SWd * 0.52  # visible diffuse downward solar radiation [W/m2]
+
+    } else {
+
+      nbdsfA <- SW * 0.57  # near IR beam downward solar radiation [W/m2]
+      nddsfA <- SW * 0  # near IR diffuse downward solar radiation [W/m2]
+      vbdsfA <- SW * 0.43  # visible beam downward solar radiation [W/m2]
+      vddsfA <- SW * 0  # visible diffuse downward solar radiation [W/m2]
+    }
+
+
+
     prateA <- Rain  # precipitation rate [kg_H2O/m2/s]
     dlwrfA <- LW  # downward long wave radiation [W/m2]
     presA  <- pres  # pressure [Pa]
