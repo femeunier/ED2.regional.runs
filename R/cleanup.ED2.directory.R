@@ -8,7 +8,8 @@ cleanup.ED2.directory <- function(
     years2keep.full.analy = c(2014:2024),
     years2keep.month.histo = c(1400:2024),
 
-    month2keep = 1){
+    month2keep.analy = 1,
+    month2keep.histo = 1){
 
   library(dplyr)
 
@@ -38,10 +39,11 @@ cleanup.ED2.directory <- function(
            month = hist.months)
 
   df.analy2keep <- df.analy %>%
-    filter(year %in% years2keep.full.analy)
+    filter(year %in% years2keep.full.analy,
+           month %in% month2keep.analy)
   df.hist2keep <- df.hist %>%
     filter(year %in% years2keep.month.histo,
-           month == month2keep)
+           month %in% month2keep.histo)
 
   keep.analy <- file.path(df.analy2keep$file)
   keep.hist  <- file.path(df.hist2keep$file)
